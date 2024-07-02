@@ -5,7 +5,8 @@ contract SupplyChain {
     address public admin;
 
     enum State { Created, InTransit, Delivered, Sold }
-    
+    enum UserType { User, Store, Provider }
+
     struct Product {
         string name;
         uint256 price;
@@ -18,6 +19,7 @@ contract SupplyChain {
         address userAddress;
         string username;
         bool isRegistered;
+        UserType userType;
     }
 
     struct ProductWithID {
@@ -36,8 +38,11 @@ contract SupplyChain {
     uint256 public productCount;
 
     event ProductCreated(uint256 productId, string name, uint256 price, uint256 quantity, address owner);
+    event ProductBought(uint256 productId, address newOwner, uint256 quantity, uint256 remainingQuantity, uint256 newPrice);
+    event UserRegistered(address userAddress, string username, UserType userType);
     event ProductBought(uint256 productId, address newOwner, uint256 quantity, uint256 remainingQuantity);
-    event UserRegistered(address userAddress, string username);
+    event ProductUpdated(uint256 productId, uint256 newPrice);
+
 
     modifier onlyAdmin() {
         require(msg.sender == admin, "Only the contract admin can perform this action");
@@ -59,64 +64,90 @@ contract SupplyChain {
         users[admin] = User({
             userAddress: admin,
             username: "Admin",
-            isRegistered: true
+            isRegistered: true,
+            userType: UserType.Provider 
         });
-        emit UserRegistered(admin, "Admin");
+        emit UserRegistered(admin, "Admin", UserType.Provider);
     }
 
-    function registerUser(string memory _username) public {
+    function registerUser(string memory _username, UserType _userType) public {
         require(!users[msg.sender].isRegistered, "User already registered");
         users[msg.sender] = User({
             userAddress: msg.sender,
             username: _username,
-            isRegistered: true
+            isRegistered: true,
+            userType: _userType
         });
-        emit UserRegistered(msg.sender, _username);
+        emit UserRegistered(msg.sender, _username, _userType);
     }
 
-    function isUserRegistered(address userAddress) public view returns (bool) {
+      function isUserRegistered(address userAddress) public view returns (bool) {
         return users[userAddress].isRegistered;
     }
 
-    function createProduct(string memory _name, uint256 _price, uint256 _quantity) public onlyAdmin {
+    function createProduct(string memory _name, uint256 _price, uint256 _quantity) public onlyRegisteredUser {
+        require(users[msg.sender].userType == UserType.Provider, "Only providers can create products");
         products[productCount] = Product({
             name: _name,
             price: _price * 1 wei, // Price in wei
             quantity: _quantity,
             state: State.Created,
-            owner: admin
+            owner: msg.sender
         });
-        
-        emit ProductCreated(productCount, _name, _price, _quantity, admin);
+
+        emit ProductCreated(productCount, _name, _price, _quantity, msg.sender);
         productCount++;
     }
 
-    function buyProduct(uint256 _productId, uint256 _quantity) public payable onlyRegisteredUser productExists(_productId) {
-        Product storage product = products[_productId];
-        require(product.state == State.Created, "Product is not available for sale");
-        require(_quantity <= product.quantity, "Not enough quantity available");
-        uint256 totalPrice = product.price * _quantity;
-        require(msg.value == totalPrice, "Incorrect value sent");
-        require(product.owner != msg.sender, "Owner cannot buy their own product");
+  function buyProduct(uint256 _productId, uint256 _quantity, uint256 _newPrice) public payable onlyRegisteredUser productExists(_productId) {
+    Product storage product = products[_productId];
+    require(product.state == State.Created, "Product is not available for sale");
+    require(_quantity <= product.quantity, "Not enough quantity available");
+    
+    require(msg.sender != product.owner, "Owner cannot buy their own product");
+
+    if (users[msg.sender].userType == UserType.User && users[product.owner].userType == UserType.Store) {
+        require(msg.value == _newPrice * _quantity, "Incorrect amount of ether sent for the new price");
 
         product.quantity -= _quantity;
+        userProductQuantities[msg.sender][_productId] += _quantity; 
 
         if (product.quantity == 0) {
-            product.owner = msg.sender;
             product.state = State.Sold;
-        } else {  
-            uint256 newProductId = productCount;
-            products[newProductId] = Product({
-                name: product.name,
-                price: product.price,
-                quantity: userProductQuantities[msg.sender][_productId] += _quantity,
-                state: State.Created,
-                owner: msg.sender
-            });
-            productCount++;
         }
 
-        emit ProductBought(_productId, msg.sender, _quantity, product.quantity);
+        payable(product.owner).transfer(msg.value);
+
+        emit ProductBought(_productId, msg.sender, _quantity, product.quantity, _newPrice);
+    } else if (users[msg.sender].userType == UserType.Store && users[product.owner].userType == UserType.Provider) {
+        require(msg.value == product.price * _quantity, "Incorrect value sent");
+
+        product.quantity -= _quantity;
+        if (product.quantity == 0) {
+            product.state = State.Sold;
+        }
+
+        products[productCount++] = Product({
+            name: product.name,
+            price: _newPrice, 
+            quantity: _quantity,
+            state: State.InTransit,
+            owner: msg.sender
+        });
+
+        emit ProductBought(_productId, msg.sender, _quantity, product.quantity, _newPrice);
+    } else {
+        revert("Unauthorized transaction type");
+    }
+}
+
+function updateProductPrice(uint256 _productId, uint256 _newPrice) public onlyRegisteredUser productExists(_productId) {
+        Product storage product = products[_productId];
+        require(msg.sender == product.owner, "Only the product owner can update the price");
+        require(_newPrice > 0, "Price must be positive");
+
+        product.price = _newPrice;
+        emit ProductUpdated(_productId, _newPrice);
     }
 
     function getProduct(uint256 _productId) public view returns (string memory, uint256, uint256, State, address) {
@@ -139,4 +170,62 @@ contract SupplyChain {
         }
         return allProducts;
     }
+
+    function getStoreProducts(address storeAddress) public view returns (ProductWithID[] memory) {
+    require(users[storeAddress].isRegistered, "Store is not registered.");
+    require(users[storeAddress].userType == UserType.Store, "Address does not belong to a store.");
+
+    uint256 count = 0;
+    for (uint256 i = 0; i < productCount; i++) {
+        if (products[i].owner == storeAddress) {
+            count++;
+        }
+    }
+
+    ProductWithID[] memory storeProducts = new ProductWithID[](count);
+
+    uint256 index = 0;
+    for (uint256 i = 0; i < productCount; i++) {
+        if (products[i].owner == storeAddress) {
+            storeProducts[index] = ProductWithID({
+                productId: i,
+                name: products[i].name,
+                price: products[i].price,
+                quantity: products[i].quantity,
+                state: products[i].state,
+                owner: products[i].owner
+            });
+            index++;
+        }
+    }
+
+    return storeProducts;
+}
+
+    function buyProductFromStore(uint256 _productId, uint256 _quantity) public payable onlyRegisteredUser productExists(_productId) {
+        Product storage product = products[_productId];
+        require(_quantity <= product.quantity, "Not enough quantity available");
+        require(users[msg.sender].userType == UserType.User, "Only users can buy products");
+        require(users[product.owner].userType == UserType.Store, "Product must be owned by a store");
+        uint256 totalPrice = product.price * _quantity;
+        require(msg.value == totalPrice, "Incorrect amount of ether sent");
+
+        product.quantity -= _quantity;
+
+        if (product.quantity == 0) {
+            product.state = State.Sold;
+        }
+
+        userProductQuantities[msg.sender][_productId] += _quantity;
+
+        payable(product.owner).transfer(msg.value);
+
+        emit ProductBought(_productId, product.owner, _quantity, product.quantity);
+    }
+
+     function getUserType(address userAddress) public view returns (UserType) {
+        require(users[userAddress].isRegistered, "User is not registered");
+        return users[userAddress].userType;
+    }
+
 }
