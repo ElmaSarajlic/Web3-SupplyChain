@@ -5,7 +5,7 @@ import {
   TableContainer, TableHead, TableRow, Paper, Typography,
   Box, Modal, TextField
 } from "@mui/material";
-import { updateProductPrice } from "../scripts/getContract"; // Import your update function
+import { updateProductPrice } from "../scripts/getContract"; 
 
 const style = {
   position: 'absolute',
@@ -60,7 +60,6 @@ const AllProducts = ({ contract, account }) => {
       await updateProductPrice(contract, currentProduct.productId, newPrice, account);
       alert("Price updated successfully");
       setModalOpen(false);
-      // Optionally update the local state to reflect the new price
       setProducts(products.map(p => p.productId === currentProduct.productId ? { ...p, price: newPrice } : p));
       setNewPrice("");
     } catch (error) {

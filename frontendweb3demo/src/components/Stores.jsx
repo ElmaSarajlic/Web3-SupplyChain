@@ -14,7 +14,7 @@ import {
   Typography,
   Box,
 } from "@mui/material";
-import { getUserType, buyProductFromStore } from "../scripts/getContract"; // Ensure this import points to where your function is defined
+import { getUserType, buyProductFromStore } from "../scripts/getContract"; 
 
 const AllProducts = ({ contract, account }) => {
   const [products, setProducts] = useState([]);
@@ -59,7 +59,6 @@ const AllProducts = ({ contract, account }) => {
       const value = BigInt(price) * BigInt(qty);
       await buyProductFromStore(contract, productId, qty, value.toString());
       alert("Product purchased successfully!");
-      // Optionally update the product list to reflect the purchase
       setProducts(prevProducts => prevProducts.map(p => {
         if (p.productId === productId) {
           return { ...p, quantity: p.quantity - qty };

@@ -11,7 +11,7 @@ import {
   Paper,
   Typography,
 } from "@mui/material";
-import { getUserType } from "../scripts/getContract"; // Ensure the path is correct
+import { getUserType } from "../../scripts/getContract"; 
 
 const AllProducts = ({ contract }) => {
   const [products, setProducts] = useState([]);
@@ -29,7 +29,7 @@ const AllProducts = ({ contract }) => {
         const filteredProducts = await Promise.all(
           allProducts.map(async (product) => {
             const userType = await getUserType(contract, product.owner);
-            return (userType === "Store" || userType === 2n) ? product : null;
+            return (userType === "Store" || userType === 1n) ? product : null;
           })
         );
         setProducts(filteredProducts.filter(product => product != null));

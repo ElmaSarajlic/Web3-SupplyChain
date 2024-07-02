@@ -77,7 +77,7 @@ const HomePage = ({ contract, account }) => {
       <Button
         variant="contained"
         color="primary"
-        onClick={() => navigate("/provider-transactions")}
+        onClick={() => navigate("/transactionsForProvider")}
         style={{ margin: "8px" }}
       >
         Transactions

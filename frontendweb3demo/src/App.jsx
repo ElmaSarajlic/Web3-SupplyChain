@@ -1,10 +1,10 @@
 import React, { useState } from "react";
 import { BrowserRouter as Router, Routes, Route, useNavigate } from "react-router-dom";
-import CreateProduct from "./components/CreateProduct";
+import CreateProduct from "./components/Provider/CreateProduct";
 import GetAllProducts from "./components/GetAllProducts";
 import ProductDetails from "./components/ProductDetails";
 import Registration from "./components/Registration";
-import Transactions from "./components/Transactions";
+import TransactionsForProvider from "./components/Provider/TransactionsForProvider";
 import ProviderTransactions from "./components/ProviderTransactions";
 
 import SupplierProducts from "./components/SupplierProducts";
@@ -55,7 +55,7 @@ const App = () => {
         <Route path="/create-product" element={<CreateProduct contract={contract} account={account} />} />
         <Route path="/get-all-products" element={<GetAllProducts contract={contract} account={account} />} />
         <Route path="/admin-products" element={<AdminProducts contract={contract} account={account} />} />
-        <Route path="/transactions" element={<Transactions contract={contract} account={account} />} />
+        <Route path="/transactionsForProvider" element={<TransactionsForProvider contract={contract} account={account} />} />
         <Route path="/homepage" element={<HomePage contract={contract} account={account} />} />
         <Route path="/product-details/:productId" element={<ProductDetails contract={contract} />} />
         <Route path="/supplier-products" element={<SupplierProducts contract={contract} account={account} />} />

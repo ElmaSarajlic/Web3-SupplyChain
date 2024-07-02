@@ -14,7 +14,7 @@ import {
   Typography,
   Box,
 } from "@mui/material";
-import { getUserType, buyProduct } from "../scripts/getContract"; // Ensure this path is correct and functions are exported properly
+import { getUserType, buyProduct } from "../scripts/getContract"; 
 
 const AllProducts = ({ contract, account }) => {
   const [products, setProducts] = useState([]);

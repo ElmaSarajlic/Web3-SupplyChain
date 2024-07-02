@@ -34,7 +34,7 @@ const Registration = ({ setUser, setContract }) => {
         const contractInstance = getContract(web3);
         setContract(contractInstance);
 
-        await registerUser(contractInstance, username, userType); // Pass userType to the registration function
+        await registerUser(contractInstance, username, userType);
         alert("User registered successfully. You can now log in.");
         navigate("/");
       } else {
