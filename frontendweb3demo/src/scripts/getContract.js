@@ -14,9 +14,32 @@ const contractABI = [
 				"internalType": "uint256",
 				"name": "_quantity",
 				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_newPrice",
+				"type": "uint256"
 			}
 		],
 		"name": "buyProduct",
+		"outputs": [],
+		"stateMutability": "payable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_productId",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_quantity",
+				"type": "uint256"
+			}
+		],
+		"name": "buyProductFromStore",
 		"outputs": [],
 		"stateMutability": "payable",
 		"type": "function"
@@ -48,6 +71,43 @@ const contractABI = [
 		"inputs": [],
 		"stateMutability": "nonpayable",
 		"type": "constructor"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "productId",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "newOwner",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "quantity",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "remainingQuantity",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "newPrice",
+				"type": "uint256"
+			}
+		],
+		"name": "ProductBought",
+		"type": "event"
 	},
 	{
 		"anonymous": false,
@@ -118,14 +178,56 @@ const contractABI = [
 		"type": "event"
 	},
 	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "productId",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "newPrice",
+				"type": "uint256"
+			}
+		],
+		"name": "ProductUpdated",
+		"type": "event"
+	},
+	{
 		"inputs": [
 			{
 				"internalType": "string",
 				"name": "_username",
 				"type": "string"
+			},
+			{
+				"internalType": "enum SupplyChain.UserType",
+				"name": "_userType",
+				"type": "uint8"
 			}
 		],
 		"name": "registerUser",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_productId",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_newPrice",
+				"type": "uint256"
+			}
+		],
+		"name": "updateProductPrice",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -144,6 +246,12 @@ const contractABI = [
 				"internalType": "string",
 				"name": "username",
 				"type": "string"
+			},
+			{
+				"indexed": false,
+				"internalType": "enum SupplyChain.UserType",
+				"name": "userType",
+				"type": "uint8"
 			}
 		],
 		"name": "UserRegistered",
@@ -250,6 +358,76 @@ const contractABI = [
 		"inputs": [
 			{
 				"internalType": "address",
+				"name": "storeAddress",
+				"type": "address"
+			}
+		],
+		"name": "getStoreProducts",
+		"outputs": [
+			{
+				"components": [
+					{
+						"internalType": "uint256",
+						"name": "productId",
+						"type": "uint256"
+					},
+					{
+						"internalType": "string",
+						"name": "name",
+						"type": "string"
+					},
+					{
+						"internalType": "uint256",
+						"name": "price",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "quantity",
+						"type": "uint256"
+					},
+					{
+						"internalType": "enum SupplyChain.State",
+						"name": "state",
+						"type": "uint8"
+					},
+					{
+						"internalType": "address",
+						"name": "owner",
+						"type": "address"
+					}
+				],
+				"internalType": "struct SupplyChain.ProductWithID[]",
+				"name": "",
+				"type": "tuple[]"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "userAddress",
+				"type": "address"
+			}
+		],
+		"name": "getUserType",
+		"outputs": [
+			{
+				"internalType": "enum SupplyChain.UserType",
+				"name": "",
+				"type": "uint8"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
 				"name": "userAddress",
 				"type": "address"
 			}
@@ -343,7 +521,7 @@ const contractABI = [
 	}
 ];
 
-const contractAddress = "0xf0c878044fd6719c2ff6c569c1c976fff90b9949"; 
+const contractAddress = "0x3e7caef331d199673229277323472a9039244796"; 
 
 const getContract = (web3) => {
     return new web3.eth.Contract(contractABI, contractAddress);
@@ -379,17 +557,39 @@ export const getAllProducts = async (contract) => {
     }
 };
 
-export const buyProduct = async (contract, productId, quantity, value) => {
-    try {
-        const accounts = await web3.eth.getAccounts();
-        const account = accounts[0];
+export const buyProduct = async (contract, productId, quantity, newPrice, accountType) => {
+    const accounts = await web3.eth.getAccounts();
+    const account = accounts[0]; // Assuming the first account is the buyer
+    
+    let priceToUse = newPrice;
+    
+    // Fetch product to determine existing price if needed
+    const product = await contract.methods.getProduct(productId).call();
+    if (!newPrice && product) {
+        priceToUse = product.price;
+    }
+    
+    const value = BigInt(priceToUse) * BigInt(quantity);
 
-        await contract.methods.buyProduct(productId, quantity).send({ from: account, value: value });
-        console.log("Product bought successfully");
+    try {
+        // Adjust based on the userType
+        let actualValue = value;
+        if (accountType === "Store") {
+            // Specific logic if the buyer is a Store, e.g., use existing price
+            actualValue = BigInt(product.price) * BigInt(quantity);
+        }
+
+        await contract.methods.buyProduct(productId, quantity, priceToUse).send({
+            from: account,
+            value: actualValue.toString() // Adjusted based on the userType
+        });
+        console.log("Product bought successfully, possibly with new pricing");
     } catch (error) {
-        console.error(error);
+        console.error("Error buying product:", error);
+        throw error; // Rethrow to handle it in UI components for proper error management
     }
 };
+
 
 export const getAdmin = async (contract) => {
     try {
@@ -424,19 +624,17 @@ export const getProductDetails = async (contract, productId) => {
 		}
 	};
 
-	export const registerUser = async (contract, username) => {
+	export const registerUser = async (contract, username, userType) => {
 		try {
 			const accounts = await web3.eth.getAccounts();
-			const userAccount = accounts[0];
-	
-			await contract.methods.registerUser(username).send({ from: userAccount });
+			await contract.methods.registerUser(username, userType).send({ from: accounts[0] });
 			console.log("User registered successfully");
 		} catch (error) {
-			console.error(error);
-		}
-	};
+			console.error("Error registering user:", error);
+			throw error
+		}};	
 
-	export const isUserRegistered = async (contract, address) => {
+	export const isUserRegistered = async (contract, address, userType) => {
 		try {
 			const isRegistered = await contract.methods.isUserRegistered(address).call();
 			return isRegistered;
@@ -446,3 +644,59 @@ export const getProductDetails = async (contract, productId) => {
 		}
 	};
 	
+
+
+	export const getStoreProducts = async (contract, storeAddress) => {
+		try {
+			const products = await contract.methods.getStoreProducts(storeAddress).call();
+			return products.map(product => ({
+				productId: product.productId,
+				name: product.name,
+				price: parseInt(product.price),
+				quantity: parseInt(product.quantity),
+				state: product.state,
+				owner: product.owner
+			}));
+		} catch (error) {
+			console.error("Error fetching store products:", error);
+		}
+	};
+
+	export const getUserType = async (contract, userAddress) => {
+		try {
+			const userType = await contract.methods.getUserType(userAddress).call();
+			console.log("User type retrieved:", userType);
+			return userType;
+		} catch (error) {
+			console.error("Error fetching user type:", error);
+			throw error;  // Rethrow to handle it in UI components
+		}
+	};
+	
+	export const buyProductFromStore = async (contract, productId, quantity, value) => {
+		try {
+			const accounts = await web3.eth.getAccounts();
+			const account = accounts[0];  // Assuming the first account is the buyer
+	
+			await contract.methods.buyProductFromStore(productId, quantity).send({ from: account, value: value });
+			console.log("Product purchased from store successfully");
+		} catch (error) {
+			console.error("Error purchasing product from store:", error);
+			throw error;  // Rethrow to handle it in UI components
+		}
+	};
+	
+	export const updateProductPrice = async (contract, productId, newPrice, account) => {
+		try {
+			// Make sure newPrice is a string that represents an integer
+			const response = await contract.methods.updateProductPrice(productId, newPrice).send({ from: account });
+			console.log("Product price updated successfully:", response);
+		} catch (error) {
+			console.error("Failed to update product price:", error);
+			throw error; // You can handle this error in your component to show user feedback
+		}
+	};
+	
+
+	
+		

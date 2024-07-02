@@ -8,9 +8,9 @@ import {
   CircularProgress,
   Box,
 } from "@mui/material";
-import getContract, { isUserRegistered } from "../scripts/getContract";
+import getContract, { isUserRegistered, getUserType } from "../scripts/getContract";
 
-const Login = ({ setUser, setContract }) => {
+const Login = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -20,17 +20,30 @@ const Login = ({ setUser, setContract }) => {
       if (window.ethereum) {
         const web3 = new Web3(window.ethereum);
         await window.ethereum.enable();
-
         const accounts = await web3.eth.getAccounts();
         const account = accounts[0];
-
         const contractInstance = getContract(web3);
-        setContract(contractInstance);
 
         const registered = await isUserRegistered(contractInstance, account);
         if (registered) {
-          setUser(account);
-          navigate("/homepage");
+          const userType = await getUserType(contractInstance, account);
+          switch (userType) {
+            case 0n: // Assuming 0 is User
+              navigate("/homepage");
+              break;
+            case 1n: // Assuming 1 is Store
+              navigate("/homepage");
+              break;
+            case 2n: // Assuming 2 is Provider
+              navigate("/homepage");
+              break;
+            case admin: // Assuming 2 is Provider
+            navigate("/homepage");
+            break;
+            default:
+              alert("Invalid user type");
+              break;
+          }
         } else {
           alert("User not registered. Please register first.");
           navigate("/registration");

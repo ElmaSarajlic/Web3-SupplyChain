@@ -8,11 +8,16 @@ import {
   TextField,
   CircularProgress,
   Box,
+  MenuItem,
+  Select,
+  InputLabel,
+  FormControl,
 } from "@mui/material";
 import getContract, { registerUser } from "../scripts/getContract";
 
 const Registration = ({ setUser, setContract }) => {
   const [username, setUsername] = useState("");
+  const [userType, setUserType] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -29,7 +34,7 @@ const Registration = ({ setUser, setContract }) => {
         const contractInstance = getContract(web3);
         setContract(contractInstance);
 
-        await registerUser(contractInstance, username);
+        await registerUser(contractInstance, username, userType); // Pass userType to the registration function
         alert("User registered successfully. You can now log in.");
         navigate("/");
       } else {
@@ -56,11 +61,23 @@ const Registration = ({ setUser, setContract }) => {
           onChange={(e) => setUsername(e.target.value)}
           margin="normal"
         />
+        <FormControl fullWidth margin="normal">
+          <InputLabel>User Type</InputLabel>
+          <Select
+            value={userType}
+            label="User Type"
+            onChange={(e) => setUserType(e.target.value)}
+          >
+            <MenuItem value={0}>User</MenuItem>
+            <MenuItem value={1}>Store</MenuItem>
+            <MenuItem value={2}>Provider</MenuItem>
+          </Select>
+        </FormControl>
         <Button
           variant="contained"
           color="primary"
           onClick={handleRegister}
-          disabled={loading}
+          disabled={loading || !username || userType === ''}
           size="large"
         >
           {loading ? <CircularProgress size={24} /> : "Register"}

@@ -3,24 +3,139 @@ import { useNavigate } from "react-router-dom";
 import { Container, Typography, Button, Box, CircularProgress } from "@mui/material";
 
 const HomePage = ({ contract, account }) => {
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [userType, setUserType] = useState("");
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const checkAdmin = async () => {
+    const fetchUserType = async () => {
       try {
-        const admin = await contract.methods.admin().call();
-        setIsAdmin(admin.toLowerCase() === account.toLowerCase());
+        const type = await contract.methods.getUserType(account).call();
+        setUserType(type);
       } catch (error) {
-        console.error("Error checking admin:", error);
+        console.error("Error fetching user type:", error);
       } finally {
         setLoading(false);
       }
     };
 
-    checkAdmin();
+    fetchUserType();
   }, [contract, account]);
+
+  const renderButtonsForUser = () => (
+    <Box mt={4}>
+      <Button
+        variant="contained"
+        color="primary"
+        onClick={() => navigate("/stores")}
+        style={{ margin: "8px" }}
+      >
+        Store Products
+      </Button>
+      <Button
+        variant="contained"
+        color="secondary"
+        onClick={() => navigate("/user-transactions")}
+        style={{ margin: "8px" }}
+      >
+        My Transactions
+      </Button>
+    </Box>
+  );
+
+  const renderButtonsForStore = () => (
+    <Box mt={4}>
+      <Button
+        variant="contained"
+        color="primary"
+        onClick={() => navigate("/supplier-products")}
+        style={{ margin: "8px" }}
+      >
+        Providers' Products
+      </Button>
+      <Button
+        variant="contained"
+        color="secondary"
+        onClick={() => navigate("/get-all-products")}
+        style={{ margin: "8px" }}
+      >
+        My Products
+      </Button>
+      <Button
+        variant="contained"
+        color="secondary"
+        onClick={() => navigate("/store-transactions")}
+        style={{ margin: "8px" }}
+      >
+        Transactions
+      </Button>
+    </Box>
+  );
+
+  const renderButtonsForProvider = () => (
+    <Box mt={4}>
+      <Button
+        variant="contained"
+        color="primary"
+        onClick={() => navigate("/provider-transactions")}
+        style={{ margin: "8px" }}
+      >
+        Transactions
+      </Button>
+      <Button
+        variant="contained"
+        color="secondary"
+        onClick={() => navigate("/transactions")}
+        style={{ margin: "8px" }}
+      >
+        My Products
+      </Button>
+      <Button
+        variant="contained"
+        color="secondary"
+        onClick={() => navigate("/create-product")}
+        style={{ margin: "8px" }}
+      >
+        Create Product
+      </Button>
+    </Box>
+  );
+
+  const renderButtonsForAdmin = () => (
+    <Box mt={4}>
+      <Button
+        variant="contained"
+        color="primary"
+        onClick={() => navigate("/get-all-products")}
+        style={{ margin: "8px" }}
+      >
+        All Transactions
+      </Button>
+      <Button
+        variant="contained"
+        color="secondary"
+        onClick={() => navigate("/all-products")}
+        style={{ margin: "8px" }}
+      >
+        All Products
+      </Button>
+    </Box>
+  );
+
+  const renderUserInterface = () => {
+    switch (userType) {
+      case 0n:
+        return renderButtonsForUser();
+      case 1n:
+        return renderButtonsForStore();
+      case 2n:
+        return renderButtonsForProvider();
+      case "admin":
+        return renderButtonsForAdmin();
+      default:
+        return <Typography variant="h6">Unauthorized Access</Typography>;
+    }
+  };
 
   return (
     <Container maxWidth="sm">
@@ -30,44 +145,8 @@ const HomePage = ({ contract, account }) => {
         </Typography>
         {loading ? (
           <CircularProgress />
-        ) : isAdmin ? (
-          <Box mt={4}>
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={() => navigate("/admin-products")}
-              style={{ margin: "8px" }}
-            >
-              My Supplies
-            </Button>
-            <Button
-              variant="contained"
-              color="secondary"
-              onClick={() => navigate("/transactions")}
-              style={{ margin: "8px" }}
-            >
-              Transactions
-            </Button>
-            <Button
-              variant="contained"
-              color="secondary"
-              onClick={() => navigate("/create-product")}
-              style={{ margin: "8px" }}
-            >
-              Create Product
-            </Button>
-          </Box>
         ) : (
-          <Box mt={4}>
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={() => navigate("/get-all-products")}
-              style={{ margin: "8px" }}
-            >
-              Products
-            </Button>
-          </Box>
+          renderUserInterface()
         )}
       </Box>
     </Container>

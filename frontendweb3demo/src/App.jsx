@@ -4,8 +4,12 @@ import CreateProduct from "./components/CreateProduct";
 import GetAllProducts from "./components/GetAllProducts";
 import ProductDetails from "./components/ProductDetails";
 import Registration from "./components/Registration";
-import UpdateState from "./components/UpdateState";
 import Transactions from "./components/Transactions";
+import ProviderTransactions from "./components/ProviderTransactions";
+
+import SupplierProducts from "./components/SupplierProducts";
+import Stores from "./components/Stores";
+
 
 import Login from "./components/Login";
 import initializeWeb3 from "./scripts/initializeWeb3";
@@ -44,7 +48,7 @@ const App = () => {
 
   return (
     <div>
-      {/* <button onClick={handleConnect}>Connect Wallet</button> */}
+      <button onClick={handleConnect}>Connect Wallet</button>
 
       <Routes>
         <Route path="/" element={<Login setUser={setAccount} setContract={setContract} />} />
@@ -54,10 +58,12 @@ const App = () => {
         <Route path="/transactions" element={<Transactions contract={contract} account={account} />} />
         <Route path="/homepage" element={<HomePage contract={contract} account={account} />} />
         <Route path="/product-details/:productId" element={<ProductDetails contract={contract} />} />
+        <Route path="/supplier-products" element={<SupplierProducts contract={contract} account={account} />} />
+        <Route path="/stores" element={<Stores contract={contract} account={account} />} />
+        <Route path="/provider-transactions" element={<ProviderTransactions contract={contract} account={account} />} />
 
         <Route path="/product-details" element={<ProductDetails contract={contract} />} />
         <Route path="/registration" element={<Registration setUser={setAccount} setContract={setContract} />} />
-        <Route path="/update-state" element={<UpdateState contract={contract} account={account} />} />
       </Routes>
     </div>
   );
