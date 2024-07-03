@@ -14,7 +14,7 @@ import {
   Typography,
   Box,
 } from "@mui/material";
-import { buyProductFromStore } from "../../scripts/getContract";  // Ensure this is correctly imported
+import { buyProductFromStore } from "../../scripts/getContract";  
 
 const AllProducts = ({ contract, account }) => {
   const [products, setProducts] = useState([]);
