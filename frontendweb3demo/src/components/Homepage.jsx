@@ -11,6 +11,7 @@ const HomePage = ({ contract, account }) => {
     const fetchUserType = async () => {
       try {
         const type = await contract.methods.getUserType(account).call();
+        console.log(userType);
         setUserType(type);
       } catch (error) {
         console.error("Error fetching user type:", error);
@@ -35,10 +36,10 @@ const HomePage = ({ contract, account }) => {
       <Button
         variant="contained"
         color="secondary"
-        onClick={() => navigate("/user-transactions")}
+        onClick={() => navigate("/UserOwnedTransactions")}
         style={{ margin: "8px" }}
       >
-        My Transactions
+      Users Transactions      
       </Button>
     </Box>
   );
@@ -48,7 +49,7 @@ const HomePage = ({ contract, account }) => {
       <Button
         variant="contained"
         color="primary"
-        onClick={() => navigate("/supplier-products")}
+        onClick={() => navigate("/providerProductsForStore")}
         style={{ margin: "8px" }}
       >
         Providers' Products
@@ -56,7 +57,7 @@ const HomePage = ({ contract, account }) => {
       <Button
         variant="contained"
         color="secondary"
-        onClick={() => navigate("/get-all-products")}
+        onClick={() => navigate("/StoreOwnedProducts")}
         style={{ margin: "8px" }}
       >
         My Products
@@ -64,10 +65,10 @@ const HomePage = ({ contract, account }) => {
       <Button
         variant="contained"
         color="secondary"
-        onClick={() => navigate("/store-transactions")}
+        onClick={() => navigate("/UserBoughtProducts")}
         style={{ margin: "8px" }}
       >
-        Transactions
+      Transactions      
       </Button>
     </Box>
   );
@@ -85,7 +86,7 @@ const HomePage = ({ contract, account }) => {
       <Button
         variant="contained"
         color="secondary"
-        onClick={() => navigate("/transactions")}
+        onClick={() => navigate("/supplier-products")}
         style={{ margin: "8px" }}
       >
         My Products
@@ -101,26 +102,6 @@ const HomePage = ({ contract, account }) => {
     </Box>
   );
 
-  const renderButtonsForAdmin = () => (
-    <Box mt={4}>
-      <Button
-        variant="contained"
-        color="primary"
-        onClick={() => navigate("/get-all-products")}
-        style={{ margin: "8px" }}
-      >
-        All Transactions
-      </Button>
-      <Button
-        variant="contained"
-        color="secondary"
-        onClick={() => navigate("/all-products")}
-        style={{ margin: "8px" }}
-      >
-        All Products
-      </Button>
-    </Box>
-  );
 
   const renderUserInterface = () => {
     switch (userType) {
@@ -130,8 +111,7 @@ const HomePage = ({ contract, account }) => {
         return renderButtonsForStore();
       case 2n:
         return renderButtonsForProvider();
-      case "admin":
-        return renderButtonsForAdmin();
+      
       default:
         return <Typography variant="h6">Unauthorized Access</Typography>;
     }

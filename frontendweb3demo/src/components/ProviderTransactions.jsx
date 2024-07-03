@@ -13,8 +13,7 @@ import {
   CircularProgress,
   Box,
 } from "@mui/material";
-import { getUserType } from "../scripts/getContract"; // Ensure the path is correct
-
+import { getUserType } from "../scripts/getContract"; 
 const StoreProducts = ({ contract, account }) => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);

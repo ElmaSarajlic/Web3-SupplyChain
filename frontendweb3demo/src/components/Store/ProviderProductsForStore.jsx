@@ -14,7 +14,7 @@ import {
   Typography,
   Box,
 } from "@mui/material";
-import { getUserType, buyProductFromStore } from "../scripts/getContract"; 
+import { getUserType, buyProduct } from "../../scripts/getContract"; 
 
 const AllProducts = ({ contract, account }) => {
   const [products, setProducts] = useState([]);
@@ -32,7 +32,7 @@ const AllProducts = ({ contract, account }) => {
         const filteredProducts = await Promise.all(
           fetchedProducts.map(async product => {
             const userType = await contract.methods.getUserType(product.owner).call();
-            return userType === 1n ? product : null;
+            return userType === 2n ? product : null;
           })
         );
         setProducts(filteredProducts.filter(product => product !== null));
@@ -41,41 +41,48 @@ const AllProducts = ({ contract, account }) => {
         alert("Failed to fetch data");
       }
     };
-
     fetchProducts();
-  }, [contract, account]);
+  }, [contract]);
 
-  const handleQuantityChange = (productId, value) => {
-    setQuantity({ ...quantity, [productId]: parseInt(value, 10) || "" });
-  };
-
-  const handleBuyProduct = async (productId, price) => {
+  const handleBuyProduct = async (productId) => {
     const qty = parseInt(quantity[productId], 10) || 0;
     if (qty <= 0) {
       alert("Please enter a valid quantity");
       return;
     }
+
+    const product = products.find(p => p.productId === productId);
+    const price = product ? product.price : undefined;
+
+    if (!price) {
+      alert("Failed to find the product price");
+      return;
+    }
+
+    const value = BigInt(price) * BigInt(qty);
+
     try {
-      const value = BigInt(price) * BigInt(qty);
-      await buyProductFromStore(contract, productId, qty, value.toString());
-      alert("Product purchased successfully!");
-      setProducts(prevProducts => prevProducts.map(p => {
-        if (p.productId === productId) {
-          return { ...p, quantity: p.quantity - qty };
-        }
-        return p;
-      }));
+      await buyProduct(contract, productId, qty, price, value.toString());
+      alert("Product bought successfully!");
       setQuantity({ ...quantity, [productId]: 0 });
     } catch (error) {
-      console.error("Error purchasing product:", error);
-      alert("Failed to purchase product");
+      console.error("Error buying product:", error);
+      alert("Failed to buy product");
     }
+  };
+
+  const handleQuantityChange = (productId, value) => {
+    setQuantity({ ...quantity, [productId]: parseInt(value, 10) || "" });
+  };
+
+  const handleRowClick = () => {
+    // navigate(`/product-details/${productId}`);
   };
 
   return (
     <Container>
       <Typography variant="h4" component="h2" gutterBottom>
-        Products from UserType 1n
+        All Products
       </Typography>
       {products.length > 0 ? (
         <TableContainer component={Paper}>
@@ -89,6 +96,7 @@ const AllProducts = ({ contract, account }) => {
                 <TableCell>State</TableCell>
                 <TableCell>Owner</TableCell>
                 <TableCell>Actions</TableCell>
+                <TableCell>Quantity</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -96,33 +104,37 @@ const AllProducts = ({ contract, account }) => {
                 <TableRow
                   key={product.productId}
                   hover
-                  // onClick={() => navigate(`/product-details/${product.productId}`)}
+                  onClick={() => handleRowClick(product.productId)}
                   style={{ cursor: "pointer" }}
                 >
                   <TableCell>{product.productId.toString()}</TableCell>
                   <TableCell>{product.name}</TableCell>
                   <TableCell>{product.price.toString()}</TableCell>
                   <TableCell>{product.quantity.toString()}</TableCell>
+
                   <TableCell>{["Created", "InTransit", "Delivered", "Sold"][product.state]}</TableCell>
                   <TableCell>{product.owner}</TableCell>
                   <TableCell>
-                    <TextField
+                  <TextField
                       type="number"
                       label="Quantity"
                       variant="outlined"
                       size="small"
                       value={quantity[product.productId] || ""}
                       onChange={(e) => handleQuantityChange(product.productId, e.target.value)}
-                      style={{ marginRight: "8px" }}
+                      style={{ width: '90px' }}
                     />
+                    </TableCell>
+                  <TableCell>
                     <Button
                       variant="contained"
                       color="secondary"
-                      onClick={() => handleBuyProduct(product.productId, product.price)}
+                      onClick={() => handleBuyProduct(product.productId)}
                     >
                       Buy
                     </Button>
                   </TableCell>
+            
                 </TableRow>
               ))}
             </TableBody>

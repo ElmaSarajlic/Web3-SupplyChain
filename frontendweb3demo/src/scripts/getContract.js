@@ -120,6 +120,37 @@ const contractABI = [
 			},
 			{
 				"indexed": false,
+				"internalType": "address",
+				"name": "newOwner",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "quantity",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "remainingQuantity",
+				"type": "uint256"
+			}
+		],
+		"name": "ProductBought",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "productId",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
 				"internalType": "string",
 				"name": "name",
 				"type": "string"
@@ -510,7 +541,7 @@ const contractABI = [
 	}
 ];
 
-const contractAddress = "0x4e8da5a669e11050e3494951b4ab9876a5eb5782"; 
+const contractAddress = "0x1d418140CD69732aB02628952f8F854ac434a9Bd"; 
 
 const getContract = (web3) => {
     return new web3.eth.Contract(contractABI, contractAddress);
@@ -539,7 +570,8 @@ export const getAllProducts = async (contract) => {
             price: parseInt(product.price),
             quantity: parseInt(product.quantity),
             state: product.state,
-            owner: product.owner
+            owner: product.owner,
+			previousOwner: product.previousOwner
         }));
     } catch (error) {
         console.error(error);
@@ -576,7 +608,6 @@ export const buyProduct = async (contract, productId, quantity, newPrice, accoun
     }
 };
 
-
 export const getAdmin = async (contract) => {
     try {
         const adminAddress = await contract.methods.admin().call();
@@ -604,6 +635,7 @@ export const getProductDetails = async (contract, productId) => {
 				quantity: parseInt(product[2]),
 				state: product[3],
 				owner: product[4]
+				
 			};
 		} catch (error) {
 			console.error(error);
@@ -641,7 +673,8 @@ export const getProductDetails = async (contract, productId) => {
 				price: parseInt(product.price),
 				quantity: parseInt(product.quantity),
 				state: product.state,
-				owner: product.owner
+				owner: product.owner,
+				previousOwner: product.previousOwner
 			}));
 		} catch (error) {
 			console.error("Error fetching store products:", error);
@@ -659,16 +692,23 @@ export const getProductDetails = async (contract, productId) => {
 		}
 	};
 	
-	export const buyProductFromStore = async (contract, productId, quantity, value) => {
+	export const buyProductFromStore = async (contract, productId, quantity, pricePerItem) => {
 		try {
 			const accounts = await web3.eth.getAccounts();
-			const account = accounts[0];  
+			if (!accounts.length) throw new Error("No Ethereum accounts available.");
+			const account = accounts[0];
 	
-			await contract.methods.buyProductFromStore(productId, quantity).send({ from: account, value: value });
+			const value = BigInt(quantity) * BigInt(pricePerItem);  
+	
+			await contract.methods.buyProductFromStore(productId, quantity)
+				.send({ from: account, value: value.toString() });
+	
 			console.log("Product purchased from store successfully");
+	
 		} catch (error) {
 			console.error("Error purchasing product from store:", error);
-			throw error;  
+			alert("Failed to purchase product: " + error.message);  
+			throw error;
 		}
 	};
 	
