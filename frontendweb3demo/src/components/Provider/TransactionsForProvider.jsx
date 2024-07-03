@@ -1,46 +1,64 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Container,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  Typography,
+  Container, Typography, Table, TableBody, TableCell,
+  TableContainer, TableHead, TableRow, Paper
 } from "@mui/material";
-import { getUserType } from "../../scripts/getContract"; 
+import { getAllProducts } from "../../scripts/getContract";
+import getContract from "../../scripts/getContract";
+import initializeWeb3 from "../../scripts/initializeWeb3";
 
-const AllProducts = ({ contract }) => {
+const AllProducts = () => {
   const [products, setProducts] = useState([]);
+  const [contract, setContract] = useState(null);
+  const [account, setAccount] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchProducts = async () => {
+    const initWeb3AndContract = async () => {
       try {
-        if (!contract) {
-          console.error('Contract is not initialized.');
+        const web3 = initializeWeb3();
+        if (!web3) {
+          alert('Web3 is not initialized. Please install MetaMask!');
           return;
         }
 
-        const allProducts = await contract.methods.getAllProducts().call();
-        const filteredProducts = await Promise.all(
-          allProducts.map(async (product) => {
-            const userType = await getUserType(contract, product.owner);
-            return (userType === "Store" || userType === 1n) ? product : null;
-          })
-        );
-        setProducts(filteredProducts.filter(product => product != null));
+        const accounts = await web3.eth.getAccounts();
+        if (accounts.length === 0) {
+          alert('No accounts found. Please unlock MetaMask!');
+          return;
+        }
+        setAccount(accounts[0]);
+
+        const contractInstance = getContract(web3);
+        setContract(contractInstance);
       } catch (error) {
-        console.error("Error fetching products:", error);
-        alert("Failed to fetch products");
+        console.error("Initialization error:", error);
+        alert("Initialization error: " + error.message);
+      }
+    };
+
+    initWeb3AndContract();
+  }, []);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      if (contract && account) {
+        try {
+          const allProducts = await getAllProducts(contract);
+          const relevantProducts = allProducts.filter(product => 
+            product.previousOwner.toLowerCase() === account.toLowerCase()
+          );
+          setProducts(relevantProducts);
+        } catch (error) {
+          console.error("Error fetching products:", error);
+          alert("Failed to fetch products: " + error.message);
+        }
       }
     };
 
     fetchProducts();
-  }, [contract]);
+  }, [contract, account]);
 
   const handleRowClick = (productId) => {
     navigate(`/product-details/${productId}`);
@@ -59,9 +77,10 @@ const AllProducts = ({ contract }) => {
                 <TableCell>Product ID</TableCell>
                 <TableCell>Name</TableCell>
                 <TableCell>Price</TableCell>
-                <TableCell>Available Quantity</TableCell>
+                <TableCell>Quantity Bought</TableCell>
                 <TableCell>State</TableCell>
                 <TableCell>Owner</TableCell>
+                <TableCell>Previous Owner</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -74,10 +93,11 @@ const AllProducts = ({ contract }) => {
                 >
                   <TableCell>{product.productId.toString()}</TableCell>
                   <TableCell>{product.name}</TableCell>
-                  <TableCell>{product.price.toString()}</TableCell>
-                  <TableCell>{product.quantity.toString()}</TableCell>
+                  <TableCell>{product.price}</TableCell>
+                  <TableCell>{product.quantity}</TableCell>
                   <TableCell>{["Created", "InTransit", "Delivered", "Sold"][product.state]}</TableCell>
                   <TableCell>{product.owner}</TableCell>
+                  <TableCell>{product.previousOwner}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

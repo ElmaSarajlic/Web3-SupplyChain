@@ -28,16 +28,16 @@ const Login = () => {
         if (registered) {
           const userType = await getUserType(contractInstance, account);
           switch (userType) {
-            case 0n: // Assuming 0 is User
+            case 0n: 
               navigate("/homepage");
               break;
-            case 1n: // Assuming 1 is Store
+            case 1n: 
               navigate("/homepage");
               break;
-            case 2n: // Assuming 2 is Provider
+            case 2n: 
               navigate("/homepage");
               break;
-            case admin: // Assuming 2 is Provider
+            case admin: 
             navigate("/homepage");
             break;
             default:

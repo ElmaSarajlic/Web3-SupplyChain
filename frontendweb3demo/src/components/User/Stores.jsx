@@ -14,7 +14,7 @@ import {
   Typography,
   Box,
 } from "@mui/material";
-import { getUserType, buyProduct } from "../scripts/getContract"; 
+import { buyProductFromStore } from "../../scripts/getContract";  // Ensure this is correctly imported
 
 const AllProducts = ({ contract, account }) => {
   const [products, setProducts] = useState([]);
@@ -28,11 +28,17 @@ const AllProducts = ({ contract, account }) => {
         return;
       }
       try {
-        const allProducts = await contract.methods.getAllProducts().call();
-        setProducts(allProducts);
+        const fetchedProducts = await contract.methods.getAllProducts().call();
+        const filteredProducts = await Promise.all(
+          fetchedProducts.map(async product => {
+            const userType = await contract.methods.getUserType(product.owner).call();
+            return userType === 1n ? product : null; 
+          })
+        );
+        setProducts(filteredProducts.filter(product => product !== null));
       } catch (error) {
-        console.error("Error fetching products:", error);
-        alert("Failed to fetch products");
+        console.error("Failed to fetch products:", error);
+        alert("Failed to fetch data");
       }
     };
 
@@ -47,21 +53,19 @@ const AllProducts = ({ contract, account }) => {
     }
 
     const product = products.find(p => p.productId === productId);
-    const price = product ? product.price : undefined;
+    const pricePerItem = product ? product.price : undefined;
 
-    if (!price) {
+    if (!pricePerItem) {
       alert("Failed to find the product price");
       return;
     }
 
-    const value = BigInt(price) * BigInt(qty);
-
     try {
-      await buyProduct(contract, productId, qty, price, value.toString());
-      alert("Product bought successfully!");
+      await buyProductFromStore(contract, productId, qty, pricePerItem);
+      alert("Product purchased successfully!");
       setQuantity({ ...quantity, [productId]: 0 });
     } catch (error) {
-      console.error("Error buying product:", error);
+      console.error("Error purchasing product:", error);
       alert("Failed to buy product");
     }
   };
@@ -71,6 +75,7 @@ const AllProducts = ({ contract, account }) => {
   };
 
   const handleRowClick = () => {
+    // Navigate to product details if needed
     // navigate(`/product-details/${productId}`);
   };
 
@@ -87,10 +92,10 @@ const AllProducts = ({ contract, account }) => {
                 <TableCell>Product ID</TableCell>
                 <TableCell>Name</TableCell>
                 <TableCell>Price</TableCell>
+                <TableCell>Quantity</TableCell>
                 <TableCell>State</TableCell>
                 <TableCell>Owner</TableCell>
                 <TableCell>Actions</TableCell>
-                <TableCell>Quantity</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -104,20 +109,19 @@ const AllProducts = ({ contract, account }) => {
                   <TableCell>{product.productId.toString()}</TableCell>
                   <TableCell>{product.name}</TableCell>
                   <TableCell>{product.price.toString()}</TableCell>
+                  <TableCell>{product.quantity.toString()}</TableCell>
                   <TableCell>{["Created", "InTransit", "Delivered", "Sold"][product.state]}</TableCell>
                   <TableCell>{product.owner}</TableCell>
                   <TableCell>
-                  <TextField
+                    <TextField
                       type="number"
                       label="Quantity"
                       variant="outlined"
                       size="small"
                       value={quantity[product.productId] || ""}
                       onChange={(e) => handleQuantityChange(product.productId, e.target.value)}
-                      style={{ width: '90px' }}
+                      style={{ marginRight: "8px" }}
                     />
-                    </TableCell>
-                  <TableCell>
                     <Button
                       variant="contained"
                       color="secondary"
@@ -126,7 +130,6 @@ const AllProducts = ({ contract, account }) => {
                       Buy
                     </Button>
                   </TableCell>
-            
                 </TableRow>
               ))}
             </TableBody>

@@ -1,14 +1,18 @@
 import React, { useState } from "react";
 import { BrowserRouter as Router, Routes, Route, useNavigate } from "react-router-dom";
 import CreateProduct from "./components/Provider/CreateProduct";
-import GetAllProducts from "./components/GetAllProducts";
+import StoreOwnedProducts from "./components/Store/StoreOwnedProducts";
 import ProductDetails from "./components/ProductDetails";
 import Registration from "./components/Registration";
 import TransactionsForProvider from "./components/Provider/TransactionsForProvider";
 import ProviderTransactions from "./components/ProviderTransactions";
+import ProviderProductsForStore from "./components/Store/ProviderProductsForStore";
+import SupplierProducts from "./components/Provider/SupplierProducts";
+import UserBoughtProducts from "./components/Store/UserBoughtProducts";
+import UserOwnedTransactions from "./components/User/UserOwnedTransactions";
 
-import SupplierProducts from "./components/SupplierProducts";
-import Stores from "./components/Stores";
+
+import Stores from "./components/User/Stores";
 
 
 import Login from "./components/Login";
@@ -16,7 +20,6 @@ import initializeWeb3 from "./scripts/initializeWeb3";
 import getContract from "./scripts/getContract";
 
 import "./App.css";
-import AdminProducts from "./components/AdminProducts";
 import HomePage from "./components/Homepage";
 
 const App = () => {
@@ -53,14 +56,16 @@ const App = () => {
       <Routes>
         <Route path="/" element={<Login setUser={setAccount} setContract={setContract} />} />
         <Route path="/create-product" element={<CreateProduct contract={contract} account={account} />} />
-        <Route path="/get-all-products" element={<GetAllProducts contract={contract} account={account} />} />
-        <Route path="/admin-products" element={<AdminProducts contract={contract} account={account} />} />
+        <Route path="/StoreOwnedProducts" element={<StoreOwnedProducts contract={contract} account={account} />} />
         <Route path="/transactionsForProvider" element={<TransactionsForProvider contract={contract} account={account} />} />
         <Route path="/homepage" element={<HomePage contract={contract} account={account} />} />
         <Route path="/product-details/:productId" element={<ProductDetails contract={contract} />} />
         <Route path="/supplier-products" element={<SupplierProducts contract={contract} account={account} />} />
         <Route path="/stores" element={<Stores contract={contract} account={account} />} />
         <Route path="/provider-transactions" element={<ProviderTransactions contract={contract} account={account} />} />
+        <Route path="/providerProductsForStore" element={<ProviderProductsForStore contract={contract} account={account} />} />
+        <Route path="/UserBoughtProducts" element={<UserBoughtProducts contract={contract} account={account} />} />
+        <Route path="/UserOwnedTransactions" element={<UserOwnedTransactions contract={contract} account={account} />} />
 
         <Route path="/product-details" element={<ProductDetails contract={contract} />} />
         <Route path="/registration" element={<Registration setUser={setAccount} setContract={setContract} />} />
